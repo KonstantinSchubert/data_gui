@@ -9,6 +9,7 @@ from PyQt4 import QtGui, QtCore
 from numpy import arange, sin, pi
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
+import dataframe_managers
 
 progname = os.path.basename(sys.argv[0])
 progversion = "0.1"
@@ -69,6 +70,8 @@ class ApplicationWindow(QtGui.QMainWindow):
         self.file_menu.addAction('&Quit', self.fileQuit, QtCore.Qt.CTRL + QtCore.Qt.Key_Q)
         self.menuBar().addMenu(self.file_menu)
 
+        self.dataFrameManager = None
+
         # self.help_menu = QtGui.QMenu('&Help', self)
         # self.menuBar().addSeparator()
         # self.menuBar().addMenu(self.help_menu)
@@ -113,7 +116,14 @@ class ApplicationWindow(QtGui.QMainWindow):
         self.statusBar().showMessage("By Konstantin Schubert!", 2000)
 
     def openFile(self):
-        pass
+        file_name = QtGui.QFileDialog.getOpenFileName(
+                                        self.main_widget,
+                                        "Open Image", os.path.expanduser('~'),
+                                        "Data Files (*.root)");
+        if file_name[-5:] == ".root":
+            self.dataFrameManager = dataframe_managers.DataFrameManagerROOT(file_name)
+        else:
+            raise Exception("Cannot open this file type. TODO: Just inform the user instead of crashing.")
 
     def fileQuit(self):
         self.close()
