@@ -15,7 +15,7 @@ progname = os.path.basename(sys.argv[0])
 progversion = "0.1"
 
 
-class MyMplCanvas(FigureCanvasQTAgg):
+class PlotCanvas(FigureCanvasQTAgg):
     """Ultimately, this is a QWidget (as well as a FigureCanvasAgg, etc.)."""
 
     def __init__(self, parent=None, width=5, height=4, dpi=100):
@@ -34,16 +34,6 @@ class MyMplCanvas(FigureCanvasQTAgg):
                                    QtGui.QSizePolicy.Expanding,
                                    QtGui.QSizePolicy.Expanding)
         FigureCanvasQTAgg.updateGeometry(self)
-
-    def compute_initial_figure(self):
-        pass
-
-
-class PlotCanvas(MyMplCanvas):
-    """A canvas that updates itself every second with a new plot."""
-
-    def __init__(self, *args, **kwargs):
-        MyMplCanvas.__init__(self, *args, **kwargs)
         timer = QtCore.QTimer(self)
         timer.timeout.connect(self.update_figure)
         timer.start(10000)
@@ -59,6 +49,8 @@ class PlotCanvas(MyMplCanvas):
         self.draw()
 
 
+
+
 class ApplicationWindow(QtGui.QMainWindow):
     def __init__(self):
         QtGui.QMainWindow.__init__(self)
@@ -72,12 +64,6 @@ class ApplicationWindow(QtGui.QMainWindow):
 
         self.dataFrameManager = None
 
-        # self.help_menu = QtGui.QMenu('&Help', self)
-        # self.menuBar().addSeparator()
-        # self.menuBar().addMenu(self.help_menu)
-
-        # self.help_menu.addAction('&About', self.about)
-
 
 
         self.main_widget = QtGui.QWidget(self)
@@ -85,15 +71,25 @@ class ApplicationWindow(QtGui.QMainWindow):
         # sidebar
         queryLabel = QtGui.QLabel("Search:");
         queryEdit = QtGui.QLineEdit();
-        filtered_available_vars = QtGui.QTableView(); # better use list view here
+        self.variables_view = QtGui.QListView();
+        self.variables_model = ??.QStringListModel(self.main_widget)
+        proxy = ???.QSortFilterProxyModel(self.main_widget)
+        proxy.setSourceModel(self.variables_model)
+        self.variables_view.setModel(proxy)
 
-        queryLayout = QtGui.QHBoxLayout();
-        queryLayout.addWidget(queryLabel);
-        queryLayout.addWidget(queryEdit);
+        # myview->setRootIndex(proxy->mapFromSource(
+        #    model->index(model->rootPath())); <- what is this for?
 
-        sidebar = QtGui.QVBoxLayout();
-        sidebar.addLayout(queryLayout);
-        sidebar.addWidget(filtered_available_vars);
+        ??.connect(queryEdit, ???.SIGNAL(??.textChanged(QString)), 
+                proxy, ??.SLOT(???.setFilterFixedString(QString)))
+
+        queryLayout = QtGui.QHBoxLayout()
+        queryLayout.addWidget(queryLabel)
+        queryLayout.addWidget(queryEdit)
+
+        sidebar = QtGui.QVBoxLayout()
+        sidebar.addLayout(queryLayout)
+        sidebar.addWidget(self.variables_view)
 
 
         # main view
@@ -113,7 +109,6 @@ class ApplicationWindow(QtGui.QMainWindow):
         self.main_widget.setFocus()
         self.setCentralWidget(self.main_widget)
 
-        self.statusBar().showMessage("By Konstantin Schubert!", 2000)
 
     def openFile(self):
         file_name = QtGui.QFileDialog.getOpenFileName(
@@ -124,6 +119,9 @@ class ApplicationWindow(QtGui.QMainWindow):
             self.dataFrameManager = dataframe_managers.DataFrameManagerROOT(file_name)
         else:
             raise Exception("Cannot open this file type. TODO: Just inform the user instead of crashing.")
+
+        columns = self.dataFrameManager.get_all_columns()
+        self.variables_model.setStringList(columns)
 
     def fileQuit(self):
         self.close()
