@@ -10,7 +10,7 @@ def cut_outliers(series):
 
     TODO: test and debug!
     """
-
+    n = 10
     quantile5 = np.percentile(series.values, 5)
     quantile10 = np.percentile(series.values, 10)
     quantile90 = np.percentile(series.values, 90)

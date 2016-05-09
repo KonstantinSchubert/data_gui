@@ -26,9 +26,6 @@ class PlotCanvas(FigureCanvasQTAgg):
         # We want the axes cleared every time plot() is called
         self.axes.hold(False)
 
-        self.compute_initial_figure()
-
-        #
         FigureCanvasQTAgg.__init__(self, fig)
         self.setParent(parent)
 
@@ -37,19 +34,13 @@ class PlotCanvas(FigureCanvasQTAgg):
                                    QtGui.QSizePolicy.Expanding)
         FigureCanvasQTAgg.updateGeometry(self)
 
-    def compute_initial_figure(self):
-        pass
 
     def update_figure(self, dataFrame, vars):
-
-
         # for now, let's plot only one variable
         var = vars[0]
         array_to_plot = dataFrame[var].values
         self.axes.hist(array_to_plot, bins=50)
         self.draw()
-
-
 
 class ApplicationWindow(QtGui.QMainWindow):
 
@@ -133,8 +124,6 @@ class ApplicationWindow(QtGui.QMainWindow):
         proxy.setSourceModel(self.variables_model)
         self.variables_view.setModel(proxy)
 
-        # myview->setRootIndex(proxy->mapFromSource(
-        #    model->index(model->rootPath())); <- what is this for?
 
         QtCore.QObject.connect(queryEdit, QtCore.SIGNAL("textChanged(QString)"), 
                 proxy, QtCore.SLOT("setFilterFixedString(QString)"))
@@ -150,27 +139,48 @@ class ApplicationWindow(QtGui.QMainWindow):
         ###########
         # main view
         ###########
-        bigview = QtGui.QVBoxLayout();
+
+
         self.variables_to_plot = QtGui.QLineEdit(text=" (todo:use tags like on SO)", parent=self.main_widget)
         self.cutstring = QtGui.QLineEdit(parent=self.main_widget)
-        self.plot_canvas = PlotCanvas(self.main_widget, width=5, height=4, dpi=100)
-        bigview.addWidget(self.variables_to_plot)
-        bigview.addWidget(self.cutstring)
+
+
+        strings = QtGui.QVBoxLayout()
+        strings.addWidget(self.variables_to_plot)
+        strings.addWidget(self.cutstring)
+
+        labels = QtGui.QVBoxLayout()
+        labels.addWidget(QtGui.QLabel("Variable(s)"))
+        labels.addWidget(QtGui.QLabel("Query"))
+
+
+        stringbox = QtGui.QHBoxLayout()
+        stringbox.addLayout(labels)
+        stringbox.addLayout(strings)
+
+        self.plot_canvas = PlotCanvas(self.main_widget, width=5, height=4, dpi=100)        
+        bigview = QtGui.QVBoxLayout()
+        bigview.addLayout(stringbox)
         bigview.addWidget(self.plot_canvas)
 
         
-        QtCore.QObject.connect(self.variables_to_plot, QtCore.SIGNAL("textChanged(QString)"), 
-                               self.update_plot)
-
-        QtCore.QObject.connect(self.cutstring, QtCore.SIGNAL("textChanged(QString)"), 
-                               self.update_plot)
         
+        #########################
         # putting it all together
+        #########################
         main_layout = QtGui.QHBoxLayout(self.main_widget)
         main_layout.addLayout(sidebar);
         main_layout.addLayout(bigview)
         self.main_widget.setFocus()
         self.setCentralWidget(self.main_widget)
+
+        ##############
+        # Wiring it up
+        ##############
+        QtCore.QObject.connect(self.variables_to_plot, QtCore.SIGNAL("textChanged(QString)"), 
+                               self.update_plot)
+        QtCore.QObject.connect(self.cutstring, QtCore.SIGNAL("textChanged(QString)"), 
+                               self.update_plot)
 
 
     def openFile(self):
