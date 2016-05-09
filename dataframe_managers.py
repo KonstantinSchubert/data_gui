@@ -36,6 +36,7 @@ class DataFrameManagerROOT(DataFrameManager):
         self._raw_dataset = pandas.DataFrame()
         # a list of Column objects
         self.columns_needed = []
+        self.columns_available = None
 
 
     def _prune_columns_needed(self, columns_needed):
@@ -90,9 +91,10 @@ class DataFrameManagerROOT(DataFrameManager):
 
 
     def get_all_columns(self):
-        ignore = ["*COV*"] # \todo: Ignore all array-branches, don't just use a heuristic
-        df = root_pandas.read_root(self.filename, self.treename, chunksize=1).next()
-        return df.columns.values
+        if self.columns_available is None:
+            df = root_pandas.read_root(self.filename, self.treename, chunksize=1).next()
+            self.columns_available = df.columns.values
+        return self.columns_available
 
 
 
