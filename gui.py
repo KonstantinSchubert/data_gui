@@ -4,6 +4,7 @@
 from __future__ import unicode_literals
 import sys
 import os
+import re
 import random
 from PyQt4 import QtGui, QtCore
 from numpy import arange, sin, pi
@@ -53,7 +54,6 @@ class PlotCanvas(FigureCanvasQTAgg):
         var = vars[0]
         array_to_plot = dataFrame[var]
         self.axes.hist(array_to_plot, bins=50)
-        print "made new plot"
         self.draw()
 
 
@@ -66,17 +66,23 @@ class ApplicationWindow(QtGui.QMainWindow):
 
         def get_variables_plotstring():
             plotstring = str(self.variables_to_plot.text())
-            print plotstring
             variable_list = plotstring.split(":")
             return variable_list
 
         def get_cutstring():
-            #stub
-            return ""
+            cut = str(self.cutstring.text())
+            return cut
 
         def get_variables_cutstring():
-            #stub
-            return [] 
+            cut = get_cutstring()
+            logical_expressions = ["and", "or", "&","|","(",")","<",">","=","True","False"," "]
+            for expression in logical_expressions:
+                cut = cut.replace(expression, ",")
+            variables = cut.split(",")
+            regex = re.compile('[-+]?[0-9]+\.?[0-9]*') # match any signed number
+            variables = [x for x in variables if not (x == "" or regex.match(x)) ]
+            print "cutstring-variables" + str(variables)
+            return variables
 
         if self.dataFrameManager is None:
             # no file is open, so we return
@@ -90,11 +96,19 @@ class ApplicationWindow(QtGui.QMainWindow):
         else:
             #todo: better notification
             self.statusBar().showMessage("Loading dataset...", 2000)
-            # df = self.dataFrameManager.get_DataFrame(columns=all_variables, query=get_cutstring())
-            df = self.dataFrameManager.get_DataFrame(columns=needed_variables) # temporary
-            self.plot_canvas.update_figure(dataFrame=df, vars=get_variables_plotstring())
-            #todo: better notification
+            cutstring = get_cutstring()
+            if cutstring=="":
+                cutstring = None
+            try:
+                df = self.dataFrameManager.get_DataFrame(columns=needed_variables, query=cutstring)
+                self.plot_canvas.update_figure(dataFrame=df, vars=get_variables_plotstring())
+            except (KeyError, TypeError, SyntaxError) as e:
+                # we catch all kinds or errors which are mostly caused by invalid query strings
+                unfortunately even valid query strings seem to fail
+                self.statusBar().showMessage("Bad Query String?", 2000)
+                return
             self.statusBar().showMessage("Success", 2000)
+
             
 
 
@@ -145,16 +159,19 @@ class ApplicationWindow(QtGui.QMainWindow):
         # main view
         ###########
         bigview = QtGui.QVBoxLayout();
-        self.variables_to_plot = QtGui.QLineEdit(text="here goes the plot variable as string (todo:use tags like on SO)", parent=self.main_widget)
-        cutstring = QtGui.QLineEdit(text="here goes cutstring - not yet implemented", parent=self.main_widget)
+        self.variables_to_plot = QtGui.QLineEdit(text=" (todo:use tags like on SO)", parent=self.main_widget)
+        self.cutstring = QtGui.QLineEdit(parent=self.main_widget)
         self.plot_canvas = PlotCanvas(self.main_widget, width=5, height=4, dpi=100)
         bigview.addWidget(self.variables_to_plot)
-        bigview.addWidget(cutstring)
+        bigview.addWidget(self.cutstring)
         bigview.addWidget(self.plot_canvas)
 
         
         QtCore.QObject.connect(self.variables_to_plot, QtCore.SIGNAL("textChanged(QString)"), 
-                self.update_plot)
+                               self.update_plot)
+
+        QtCore.QObject.connect(self.cutstring, QtCore.SIGNAL("textChanged(QString)"), 
+                               self.update_plot)
         
         # putting it all together
         main_layout = QtGui.QHBoxLayout(self.main_widget)

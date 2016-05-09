@@ -36,27 +36,21 @@ class DataFrameManagerROOT(DataFrameManager):
         self._raw_dataset = pandas.DataFrame()
         # a list of Column objects
         self.columns_needed = []
+        self.columns_priority = {}
         self.columns_available = None
 
 
-    def _prune_columns_needed(self, columns_needed):
+    def _prune_columns_needed(self):
         """
             Prevents the list of needed columns from growing to big.
 
             Can be more aggressive if needed.
         """
 
-        columns_needed.sort(key=lambda x : x.priority)
-        # double iteration should not be a big problem due to shortness of list
-        pruned = []
-        for index in range(0,len(columns_needed)):
-            # if there is no later entry with the same name (and higher priority)
-            if columns_needed[index].name not in [x.name for x in columns_needed[index+1:] ]:
-                pruned.append(columns_needed[index])
-        columns_needed = pruned
-
         # we could now drop columns with very low priority
         # but we must be careful to keep the columns with the highest priority
+        pass
+
 
 
     def get_DataFrame(self, columns, query=None):
@@ -69,21 +63,28 @@ class DataFrameManagerROOT(DataFrameManager):
         query : string
             A string to pass to the pandas.DataFrame.query method.
         """
-        for column in columns:
-            self.columns_needed.append(Column(column, DataFrameManagerROOT.max_priority))
-        self._prune_columns_needed(self.columns_needed)
-
-        # If we run in memory troubles, we could here
-        # remove columns form the raw_dataset which are not longer needed
-
-        columns_to_load = [ x.name for x in self.columns_needed if x.name not in self._raw_dataset.columns.values ]
-        loaded = root_pandas.read_root(self.filename, self.treename, columns=columns_to_load)
-        assert( len(loaded.index) == len(self._raw_dataset.index) or len(self._raw_dataset.index) == 0 )
-        self._raw_dataset = pandas.concat([self._raw_dataset, loaded] , axis=1)
-
-        # reduce column priority
+        print "newly requested " +  str(columns)
+        print "lastly requested " + str(self.columns_needed)
+        # decrease priority for existing columns
         for column in self.columns_needed:
-            column.priority -= 1
+            self.columns_priority[column] -= 1;
+        # join the new columns into the set
+        self.columns_needed = list(set(list(self.columns_needed) + columns))
+        # set the priority of the new columns to max
+        for column in columns:
+            self.columns_priority[column] = DataFrameManagerROOT.max_priority
+
+        self._prune_columns_needed()
+
+        print "after purge" + str(self.columns_needed)
+
+        columns_to_load = [ x for x in self.columns_needed if x not in self._raw_dataset.columns.values ]
+        if columns_to_load:
+            loaded = root_pandas.read_root(self.filename, self.treename, columns=columns_to_load)
+            assert( len(loaded.index) == len(self._raw_dataset.index) or len(self._raw_dataset.index) == 0 )
+            self._raw_dataset = pandas.concat([self._raw_dataset, loaded] , axis=1)
+
+
         if query is None:
             return self._raw_dataset
         else:
@@ -95,13 +96,5 @@ class DataFrameManagerROOT(DataFrameManager):
             df = root_pandas.read_root(self.filename, self.treename, chunksize=1).next()
             self.columns_available = df.columns.values
         return self.columns_available
-
-
-
-
-class Column:
-    def __init__(self,name, priority):
-        self.name = name
-        self.priority = priority
 
 
