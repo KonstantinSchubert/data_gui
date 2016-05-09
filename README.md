@@ -1,5 +1,6 @@
 # data_gui
-A simple GUI for a swift look at a dataframe.
+A simple GUI for a swift look at a pandas dataframe. 
+To goal is to support many file formats, currently only supporting `.root` files.
 
 Work in progress. 
 
