@@ -63,8 +63,6 @@ class DataFrameManagerROOT(DataFrameManager):
         query : string
             A string to pass to the pandas.DataFrame.query method.
         """
-        print "newly requested " +  str(columns)
-        print "lastly requested " + str(self.columns_needed)
         # decrease priority for existing columns
         for column in self.columns_needed:
             self.columns_priority[column] -= 1;
@@ -75,8 +73,6 @@ class DataFrameManagerROOT(DataFrameManager):
             self.columns_priority[column] = DataFrameManagerROOT.max_priority
 
         self._prune_columns_needed()
-
-        print "after purge" + str(self.columns_needed)
 
         columns_to_load = [ x for x in self.columns_needed if x not in self._raw_dataset.columns.values ]
         if columns_to_load:

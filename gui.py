@@ -40,19 +40,12 @@ class PlotCanvas(FigureCanvasQTAgg):
     def compute_initial_figure(self):
         pass
 
-    def update_figure(self):
-        # Build a list of 4 random integers between 0 and 10 (both inclusive)
-        l = [random.randint(0, 10) for i in range(4)]
-
-        self.axes.plot([0, 1, 2, 3], l, 'r')
-        self.draw()
-
     def update_figure(self, dataFrame, vars):
 
 
         # for now, let's plot only one variable
         var = vars[0]
-        array_to_plot = dataFrame[var]
+        array_to_plot = dataFrame[var].values
         self.axes.hist(array_to_plot, bins=50)
         self.draw()
 
@@ -81,7 +74,6 @@ class ApplicationWindow(QtGui.QMainWindow):
             variables = cut.split(",")
             regex = re.compile('[-+]?[0-9]+\.?[0-9]*') # match any signed number
             variables = [x for x in variables if not (x == "" or regex.match(x)) ]
-            print "cutstring-variables" + str(variables)
             return variables
 
         if self.dataFrameManager is None:
@@ -102,9 +94,9 @@ class ApplicationWindow(QtGui.QMainWindow):
             try:
                 df = self.dataFrameManager.get_DataFrame(columns=needed_variables, query=cutstring)
                 self.plot_canvas.update_figure(dataFrame=df, vars=get_variables_plotstring())
-            except (KeyError, TypeError, SyntaxError) as e:
+            except (KeyError, TypeError, SyntaxError, ValueError) as e:
                 # we catch all kinds or errors which are mostly caused by invalid query strings
-                unfortunately even valid query strings seem to fail
+                # unfortunately even valid query strings seem to fail
                 self.statusBar().showMessage("Bad Query String?", 2000)
                 return
             self.statusBar().showMessage("Success", 2000)
