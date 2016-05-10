@@ -7,13 +7,13 @@ Work in progress.
 
 
 ## Running the program
----------------
+
 
 After installation, just run the command `datagui`. 
 
 
 ## Installation
----------------
+
 
 You can install via pip: 
 

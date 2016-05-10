@@ -42,9 +42,17 @@ class PlotCanvas(FigureCanvasQTAgg):
         self.axes.hist(array_to_plot, bins=50)
         self.draw()
 
+
+class ROOTFileBrowser(QtGui.QInputDialog):
+    """ Dialog that selects the TTree in the ROOT file
+
+    When appropriate, this popup dialog can be shown to the
+    user to obtain the path of the Tree in the ROOT file.
+    """
+    pass
+
+
 class ApplicationWindow(QtGui.QMainWindow):
-
-
 
     def update_plot(self):
 
@@ -183,16 +191,26 @@ class ApplicationWindow(QtGui.QMainWindow):
                                self.update_plot)
 
 
-    def openFile(self):
-        file_name = QtGui.QFileDialog.getOpenFileName(
-                                        self.main_widget,
-                                        "Open Image", os.path.expanduser('~'),
-                                        "Data Files (*.root)");
+    def openFile(self, file_name = None, tree_path=None):
+        if file_name is None:
+            file_name = QtGui.QFileDialog.getOpenFileName(
+                                            self.main_widget,
+                                            "Open Image", os.path.expanduser('~'),
+                                            "Data Files (*.root)");
+            file_name = str(file_name)
         if file_name[-5:] == ".root":
-            self.dataFrameManager = dataframe_managers.DataFrameManagerROOT(str(file_name))
+            self.dataFrameManager = dataframe_managers.DataFrameManagerROOT(file_name, tree_path)
+            try:
+                _ = self.dataFrameManager.get_all_columns()
+            except ValueError as e:
+                tree_path, _ =  ROOTFileBrowser.getText(self.main_widget, "Please specify path of TTree",
+                                     "Tree path:") # There are more optional arguments
+                tree_path = str(tree_path)
+                print type(tree_path)
+                print tree_path
+                self.openFile(file_name, tree_path)
         else:
             raise Exception("Cannot open this file type. TODO: Just inform the user instead of crashing.")
-
         columns = self.dataFrameManager.get_all_columns()
         self.variables_model.setStringList(columns)
 

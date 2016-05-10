@@ -13,6 +13,8 @@ def main(args=None):
     qApp = QtGui.QApplication(sys.argv)
 
     aw = ApplicationWindow()
+    if args != []: # a filename was passed
+        aw.openFile(args[0])
     aw.setWindowTitle("Data GUI")
     aw.show()
     sys.exit(qApp.exec_())
