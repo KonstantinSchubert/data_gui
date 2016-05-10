@@ -16,10 +16,10 @@ setup(
     install_requires=['root_pandas',
                       'matplotlib',
                       'pandas',
-                      'pyqt4',
+                      # 'pyqt4', # this seems to be unsupported by pip
                       'future'],
     entry_points = { 'gui_scripts': [
-                     'datagui = data_gui.gui:main']},
+                     'datagui = data_gui.__main__:main']},
     classifiers = ['Operating System :: OS Independent',
     		'Programming Language :: Python :: 2',
             'Programming Language :: Python :: 3',

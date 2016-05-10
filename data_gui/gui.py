@@ -202,12 +202,3 @@ class ApplicationWindow(QtGui.QMainWindow):
     def closeEvent(self, ce):
         self.fileQuit()
 
-
-
-qApp = QtGui.QApplication(sys.argv)
-
-aw = ApplicationWindow()
-aw.setWindowTitle("%s" % progname)
-aw.show()
-sys.exit(qApp.exec_())
-#qApp.exec_()
